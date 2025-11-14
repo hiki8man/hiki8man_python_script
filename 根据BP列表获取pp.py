@@ -1,5 +1,4 @@
 import httpx
-import re
 USER_CLIENT = httpx.Client(base_url="https://osu.ppy.sh/users/")
 
 def get_bonus_pp(user_id:int):
@@ -42,3 +41,4 @@ def get_acc_bplist(user_id:int):
     acc_value *= (100 / (20 * (1 - 0.95 ** len(bp_list))))
     acc_value = round(acc_value) / 100
     pass
+
