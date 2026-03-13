@@ -15,7 +15,7 @@ def get_select_pvid() -> int:
     否则返回pvid
     '''
     jump_address = game_pymem.read_uint(game_address + int("0x6efe8c" , 16))
-    currect_pvid_base_address = game_pymem.read_uint(game_address + int("0xCC5EF18" , 16))
+    currect_pvid_base_address = game_pymem.read_ulonglong(game_address + int("0xCC5EF18" , 16))
     if currect_pvid_base_address == 0 or not isinstance(currect_pvid_base_address, int):
         # 尝试获取打歌界面pvid
         # 打歌界面pvid空值为0xFFFFFFFF
