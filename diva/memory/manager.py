@@ -61,16 +61,16 @@ class DivaMemoryManager(MemoryManager):
         super().__init__("DivaMegaMix.exe")
     
     @property
-    def eden_mode(self) -> bool:
+    def check_eden(self) -> bool:
         value = self.read_uint(DivaAddress.LastSelect.sort)
         return True if value else False
     
     @property
-    def new_class_address(self) -> int:
+    def check_new_classics(self) -> bool:
         for module in self.list_modules():
             if module.name == "NewClassics.dll":
-                return module.lpBaseOfDll
-        return 0   
+                return True
+        return False
     
     @staticmethod
     def check_running(method):
@@ -117,8 +117,8 @@ def get_string_list(self, start_address: int, end_address: int) -> list[str]:
 
 @DivaMemoryManager.check_running
 def get_pvid_list(manager:DivaMemoryManager) -> list[int]:
-    start_address = DivaAddress.DBInfo.first.calculate_address(manager)
-    end_address = DivaAddress.DBInfo.last.calculate_address(manager)
+    start_address = DivaAddress.DBInfo.first.get_address(manager)
+    end_address = DivaAddress.DBInfo.last.get_address(manager)
     
     pvid_list: list = []
     currect_address: int = start_address
@@ -140,8 +140,8 @@ def get_selected_song(manager:DivaMemoryManager) -> int:
     # -1表示错误状态
     # -2表示选中随机打歌
     # 其他表示当前ID
-    random_address = DivaAddress.GetSelectSong.random.calculate_address(manager)
-    select_address = DivaAddress.GetSelectSong.selected.calculate_address(manager)
+    random_address = DivaAddress.GetSelectSong.random.get_address(manager)
+    select_address = DivaAddress.GetSelectSong.selected.get_address(manager)
 
     if isinstance(random_address, int) and random_address >0:
         selected_pvid = manager.read_int(random_address)
@@ -155,9 +155,8 @@ def get_selected_song(manager:DivaMemoryManager) -> int:
 
 @DivaMemoryManager.check_running
 def get_new_class_mode(manager:DivaMemoryManager) -> int:
-    base_address = manager.new_class_address
-    if base_address:
-        currect_mode_address = NewClassicsAddress.Mode.state.calculate_address(manager, base_address)
+    currect_mode_address = NewClassicsAddress.Mode.state.get_address(manager)
+    if currect_mode_address:
         currect_mode = manager.read_int(currect_mode_address)
         return currect_mode if isinstance(currect_mode, int) else NewClassicsStyle.ARCADE
     else:
@@ -165,8 +164,8 @@ def get_new_class_mode(manager:DivaMemoryManager) -> int:
 
 if __name__ == "__main__":
     a = DivaMemoryManager()
-    start_address = DivaAddress.DBFolderInfo.first.calculate_address(a)
-    end_address = DivaAddress.DBFolderInfo.last.calculate_address(a)
+    start_address = DivaAddress.DBFolderInfo.first.get_address(a)
+    end_address = DivaAddress.DBFolderInfo.last.get_address(a)
     print(get_pvid_list(a))
     print(len(get_pvid_list(a)))
     print(NewClassicsStyle(get_new_class_mode(a)).name)
