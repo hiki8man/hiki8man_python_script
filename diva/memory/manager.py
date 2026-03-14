@@ -136,6 +136,10 @@ def get_pvid_list(manager:DivaMemoryManager) -> list[int]:
 
 @DivaMemoryManager.check_running
 def get_selected_song(manager:DivaMemoryManager) -> int:
+    # 0表示非选歌界面
+    # -1表示错误状态
+    # -2表示选中随机打歌
+    # 其他表示当前ID
     random_address = DivaAddress.GetSelectSong.random.calculate_address(manager)
     select_address = DivaAddress.GetSelectSong.selected.calculate_address(manager)
 
@@ -146,8 +150,8 @@ def get_selected_song(manager:DivaMemoryManager) -> int:
         selected_pvid = manager.read_int(select_address)
         assert isinstance(selected_pvid, int)
     else:
-        selected_pvid = 0
-    return selected_pvid if selected_pvid > 0 else 0
+        selected_pvid = -1
+    return selected_pvid
 
 @DivaMemoryManager.check_running
 def get_new_class_mode(manager:DivaMemoryManager) -> int:
@@ -166,3 +170,6 @@ if __name__ == "__main__":
     print(get_pvid_list(a))
     print(len(get_pvid_list(a)))
     print(NewClassicsStyle(get_new_class_mode(a)).name)
+    while True:
+        pvid = get_selected_song(a)
+        print(f"{SelectState(get_selected_song(a)).name}:{pvid if pvid > 0 else ""}")

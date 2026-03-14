@@ -154,3 +154,14 @@ class NewClassicsStyle(IntEnum):
     ARCADE = 0
     CONSOLE = 1
     MIXED = 2
+
+class SelectState(IntEnum):
+    RANDOM_SELECL = -2
+    UNKNOW_STATE = -1
+    ANOTHER_MENU = 0
+    ON_SELECTED = 1
+    
+    @classmethod
+    def _missing_(cls, value: object) -> int:
+        return cls.ON_SELECTED
+    
