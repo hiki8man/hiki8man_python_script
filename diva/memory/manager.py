@@ -103,14 +103,17 @@ class DivaMemoryManager(MemoryManager):
 
 
 @DivaMemoryManager.check_running
-def get_string_list(self, start_address: int, end_address: int) -> list[str]:
+def get_rom_folder_list(manager:DivaMemoryManager) -> list[str]:
     import ctypes
     string_list = []
+    start_address = DivaAddress.DBFolderInfo.first.get_address(manager)
+    end_address = DivaAddress.DBFolderInfo.last.get_address(manager)
+
     currect_address: int = start_address
     count = abs(end_address - start_address) // ctypes.sizeof(DivaString)
     
     for _ in range(count):
-        string_list.append(self.read_diva_string(currect_address))
+        string_list.append(manager.read_diva_string(currect_address))
         currect_address += ctypes.sizeof(DivaString)
     
     return string_list    
@@ -156,19 +159,32 @@ def get_selected_song(manager:DivaMemoryManager) -> int:
 @DivaMemoryManager.check_running
 def get_new_class_mode(manager:DivaMemoryManager) -> int:
     currect_mode_address = NewClassicsAddress.Mode.state.get_address(manager)
-    if currect_mode_address:
-        currect_mode = manager.read_int(currect_mode_address)
-        return currect_mode if isinstance(currect_mode, int) else NewClassicsStyle.ARCADE
-    else:
+    try:
+        if currect_mode_address:
+            currect_mode = manager.read_int(currect_mode_address)
+            return currect_mode if isinstance(currect_mode, int) else NewClassicsStyle.ARCADE
+        else:
+            return NewClassicsStyle.ARCADE
+    except pymem.exception.MemoryReadError|pymem.exception.ProcessNotFound:
         return NewClassicsStyle.ARCADE
+
+
+@DivaMemoryManager.check_running
+def get_db_loader_log(manager:DivaMemoryManager) -> str:
+    address = DivaAddress.DBLogger.address.get_address(manager)
+    if address:
+        db_log = manager.read_cstring(address)
+        if isinstance(db_log, str):
+            return db_log
+
+    return ""
 
 if __name__ == "__main__":
     a = DivaMemoryManager()
-    start_address = DivaAddress.DBFolderInfo.first.get_address(a)
-    end_address = DivaAddress.DBFolderInfo.last.get_address(a)
+    print(get_rom_folder_list(a))
     print(get_pvid_list(a))
     print(len(get_pvid_list(a)))
     print(NewClassicsStyle(get_new_class_mode(a)).name)
+    print(get_db_loader_log(a))
     while True:
-        pvid = get_selected_song(a)
-        print(f"{SelectState(get_selected_song(a)).name}:{pvid if pvid > 0 else ""}")
+        print(NewClassicsStyle(get_new_class_mode(a)).name)
