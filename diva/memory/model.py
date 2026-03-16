@@ -77,15 +77,18 @@ class PatternScan():
     address_offset: int = 0
     
     def get_address(self, process_pymem: pymem.Pymem, _module_name: str = "") -> int:
-        module = get_module(process_pymem, _module_name)
-            
-        scan_address = process_pymem.pattern_scan_module(self.patter_bytes, module)
-        if isinstance(scan_address, int):
-            offset = process_pymem.read_int(scan_address + self.address_offset)
-            if offset and isinstance(offset, int):
-                return offset + scan_address + self.address_offset + 4
-        
-        return 0
+        return_address: int = 0
+        if self.patter_bytes:
+            module = get_module(process_pymem, _module_name)
+                
+            scan_address = process_pymem.pattern_scan_module(self.patter_bytes, module)
+            if isinstance(scan_address, int):
+                offset = process_pymem.read_int(scan_address + self.address_offset)
+                if offset and isinstance(offset, int):
+                    return_address = offset + scan_address + self.address_offset + 4
+    
+
+        return 0 if return_address <= 0 else return_address
         
 
 @dataclass(frozen=True)
@@ -93,6 +96,10 @@ class Pointer():
     base: int|PatternScan
     offset: Sequence[DynamicOffset|StaticOffset] = field(default_factory=lambda: [StaticOffset32(0)])
     finally_offset: int = 0
+
+    def __post_init__(self):
+        if isinstance(self.base, int) and self.base <= 0:
+            raise ValueError("base address must be positive")
 
     def get_address(self, process_pymem: pymem.Pymem, _module_name: str = ""):
         base_address:int = get_module_address(process_pymem, _module_name)
@@ -112,12 +119,18 @@ class Pointer():
             else:
                 return 0
 
-        return finally_address + self.finally_offset
+        finally_address += self.finally_offset
+
+        return 0 if finally_address <= 0 else finally_address
         
 @dataclass(frozen=True)
 class Address(ABC):
     address: int|Pointer|PatternScan
     module_name: str = ""
+
+    def __post_init__(self):
+        if isinstance(self.address, int) and self.address <= 0:
+            raise ValueError("base address must be positive")
 
     def get_address(self, process_pymem: pymem.Pymem) -> int:
         if isinstance(self.address, int):
