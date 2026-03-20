@@ -8,7 +8,6 @@ class DivaString(ctypes.Structure):
                 ("end_point", ctypes.c_uint64),
                 ("data_size", ctypes.c_uint64)]
 
-        
 class NewClassicsStyle(IntEnum):
     UNKNOW = -1
     ARCADE = 0
@@ -24,7 +23,7 @@ class SelectState(IntEnum):
     UNKNOW_STATE = -1
     ANOTHER_MENU = 0
     ON_SELECTED = 1
-    
+
     @classmethod
     def _missing_(cls, value) -> int:
         return cls.ON_SELECTED
@@ -37,8 +36,25 @@ class Difficulty(IntEnum):
     ENCORE = 4
     EXEXTREME = 5
 
+    @classmethod
+    def get_difficulty_id(cls, diff_name:str ,is_ex:bool) -> int:
+        match diff_name:
+            case "Easy":
+                return cls.EASY
+            case "Normal":
+                return cls.NORMAL
+            case "Hard":
+                return cls.HARD
+            case "Extreme":
+                return cls.EXEXTREME if is_ex else cls.EXTREME
+            case "Encore":
+                return cls.ENCORE
+            case _:
+                return cls.EXTREME
+
 @dataclass(frozen=True)
 class SwitchSong:
     pv_id: int
+    difficulty: Difficulty
     style: NewClassicsStyle
-    difficulty: int
+    

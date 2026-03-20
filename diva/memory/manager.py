@@ -75,6 +75,9 @@ class DivaMemoryManager(MemoryManager):
         module = pymem.process.module_from_name(self, "NewClassics.dll")
         return module is not None
     
+    def reboot(self) -> None:
+        self.open_program()
+
     @staticmethod
     def check_running(method):
         @wraps(method)
@@ -82,7 +85,7 @@ class DivaMemoryManager(MemoryManager):
             if self.is_running:
                 return method(self, *args, **kwargs)
 
-            self.open_program()
+            self.reboot()
             if self.is_running:
                 return method(self, *args, **kwargs)
 

@@ -2,6 +2,7 @@ from manager import DivaMemoryManager
 from address import DivaAddress, NewClassicsAddress
 from model import *
 import pymem.exception
+import time
 
 @DivaMemoryManager.check_running
 def get_rom_folder_list(manager:DivaMemoryManager) -> list[str]:
@@ -65,8 +66,72 @@ def get_new_class_mode(manager:DivaMemoryManager) -> int:
             return currect_mode if isinstance(currect_mode, int) else NewClassicsStyle.ARCADE
         else:
             return NewClassicsStyle.ARCADE
-    except pymem.exception.MemoryReadError|pymem.exception.ProcessNotFound:
+    except PYMEM_ERRORS:
         return NewClassicsStyle.ARCADE
+
+@DivaMemoryManager.check_running
+def switch_new_class_mode(manager:DivaMemoryManager, mode:NewClassicsStyle) -> bool:
+    if manager.check_new_classics == False:
+        return False
+    
+    currect_mode_address = NewClassicsAddress.Mode.state.get_address(manager)
+    try:
+        if currect_mode_address:
+            manager.write_int(currect_mode_address, mode.value)
+            return True
+        else:
+            return False
+
+    except PYMEM_ERRORS:
+        return False
+
+@DivaMemoryManager.check_running
+def switch_song(manager:DivaMemoryManager, song:SwitchSong) -> int:
+    def change_last_select(manager:DivaMemoryManager, song:SwitchSong) -> None:
+        try:
+            last_pvid_address = DivaAddress.LastSelect.pvid.get_address(manager)
+            last_sort_address = DivaAddress.LastSelect.sort.get_address(manager)
+            last_diff_type_address = DivaAddress.LastSelect.diff_type.get_address(manager)
+            last_diff_value_address = DivaAddress.LastSelect.diff_value.get_address(manager)
+
+            if manager.check_eden:
+                last_pvid_address += DivaAddress.Offset.eden
+                last_sort_address += DivaAddress.Offset.eden
+                last_diff_type_address += DivaAddress.Offset.eden
+                last_diff_value_address += DivaAddress.Offset.eden
+
+            manager.write_int(last_pvid_address, song.pvid)
+            manager.write_int(last_sort_address, 1) # diff排序
+            manager.write_int(last_diff_type_address, song.difficulty)
+            manager.write_int(last_diff_value_address, 19) # all
+            switch_new_class_mode(manager, song.style)
+        except PYMEM_ERRORS:
+            pass
+
+    try:
+        state_address = DivaAddress.GameState.next.get_address(manager)
+        change_address = DivaAddress.GameState.change.get_address(manager)
+        pvid_list = get_pvid_list(manager)
+        if song.pvid in pvid_list:
+            if manager.read_int(state_address) == 6:
+                # 跳到pv鉴赏
+                manager.write_int(state_address, 6)
+                manager.write_int(change_address, 2)
+                time.sleep(0.1) # 堵塞等待diva跳转
+                # 执行操作
+                change_last_select(manager, song)
+                # 跳转选歌界面
+                manager.write_int(state_address, 5)
+                manager.write_int(change_address, 2)
+            else:
+                change_last_select(manager, song)
+            return song.pvid
+
+        else:
+            return 0
+
+    except PYMEM_ERRORS:
+        return 0
 
 @DivaMemoryManager.check_running
 def get_db_loader_log(manager:DivaMemoryManager) -> str:
