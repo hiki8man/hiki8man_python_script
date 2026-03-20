@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import ctypes
 
-from enum import IntEnum
+from enum import IntEnum, auto
 
 class DivaString(ctypes.Structure):
     _fields_ = [("data_byte", ctypes.c_byte*16),
@@ -18,6 +18,20 @@ class NewClassicsStyle(IntEnum):
     def _missing_(cls, value) -> int:
         return cls.UNKNOW
 
+class Difficulty(IntEnum):
+    EASY = 0
+    NORMAL = 1
+    HARD = 2
+    EXTREME = 3
+    EXEXTREME = 4
+    ENCORE = 5
+
+@dataclass(frozen=True)
+class SwitchSong:
+    pvid: int
+    difficulty: Difficulty
+    style: NewClassicsStyle = NewClassicsStyle.ARCADE
+
 class SelectState(IntEnum):
     RANDOM_SELECL = -2
     UNKNOW_STATE = -1
@@ -28,33 +42,25 @@ class SelectState(IntEnum):
     def _missing_(cls, value) -> int:
         return cls.ON_SELECTED
 
-class Difficulty(IntEnum):
-    EASY = 0
-    NORMAL = 1
-    HARD = 2
-    EXTREME = 3
-    ENCORE = 4
-    EXEXTREME = 5
+class GameState(IntEnum):
+    LOADING = 1
+    INTRO = 2
+    TITLE = 3
+    SELECT = 5
+    WATCH  = 6
+    PLAYING = 7
+    CUSTOMIZATION = 36
+    GALLEY = 38
+    MENU = 42
+    SETTING = 44
 
-    @classmethod
-    def get_difficulty_id(cls, diff_name:str ,is_ex:bool) -> int:
-        match diff_name:
-            case "Easy":
-                return cls.EASY
-            case "Normal":
-                return cls.NORMAL
-            case "Hard":
-                return cls.HARD
-            case "Extreme":
-                return cls.EXEXTREME if is_ex else cls.EXTREME
-            case "Encore":
-                return cls.ENCORE
-            case _:
-                return cls.EXTREME
+class SelectSort(IntEnum):
+    by_name = 0
+    by_difficulty = 1
+    by_chara = 2
+    by_scroe = 3
 
-@dataclass(frozen=True)
-class SwitchSong:
-    pv_id: int
-    difficulty: Difficulty
-    style: NewClassicsStyle
-    
+class ArchiveChange(IntEnum):
+    WAIT = 1
+    START = 2
+

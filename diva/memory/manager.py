@@ -67,13 +67,14 @@ class DivaMemoryManager(MemoryManager):
     
     @property
     def check_eden(self) -> bool:
-        value = self.read_uint(DivaAddress.LastSelect.sort)
-        return True if value else False
+        value = self.read_uint(DivaAddress.LastSelect.sort.get_address(self))
+        return True if not value else False
     
     @property
     def check_new_classics(self) -> bool:
-        module = pymem.process.module_from_name(self, "NewClassics.dll")
-        return module is not None
+        for module in self.list_modules():
+            if module == "NewClassics.dll": return True
+        return False
     
     def reboot(self) -> None:
         self.open_program()

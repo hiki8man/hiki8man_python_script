@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .memory_utils import Address, Pointer, DynamicOffset32, DynamicOffset64, StaticOffset32, StaticOffset64, PatternScan
+from memory_utils import Address, Pointer, DynamicOffset32, DynamicOffset64, StaticOffset32, StaticOffset64, PatternScan
 
 
 @dataclass(frozen=True)
@@ -8,14 +8,24 @@ class DivaAddress:
         eden: int = 0x105F460 # 影响LastSelect
     
     class LastSelect:
+        diff_type: Address = Address(0x12B634C)
         pvid: Address = Address(0x12B6350)
         sort: Address = Address(0x12B6354)
-        diff_type: Address = Address(0x12B634C)
+        '''
+        value按顺序从0开始自增，其中all和喜爱一定是最后两个数
+        难度比较特殊，其按照所有难度排序计数，再添加末尾值
+        '''
+        name_value: Address = Address(0x12B6358)
         diff_value: Address = Address(0x12B635C)
+        chara_value: Address = Address(0x12B6360)
+        score_value: Address = Address(0x12B6364)
     
     class GameState:
-        next: Address = Address(0xCC61098) # 6表示pv鉴赏模式，2表示选歌界面
-        change: Address = Address(0xCC610A0) #其为二进制，01表示已完成，11表示准备跳转
+        unknow: Address = Address(0xCC61090) # 不明
+        current: Address = Address(0xCC61094) # 当前state
+        next_jump: Address = Address(0xCC61098) # 即将跳转到state
+        before: Address = Address(0xCC6109C) # 上次的state
+        archive: Address = Address(0xCC610A0) #其为二进制，01表示已完成，11表示准备跳转
 
     class GetSelectSong:
         playing: Address = Address(0x16E2BB0)
