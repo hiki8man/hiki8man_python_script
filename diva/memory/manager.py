@@ -1,8 +1,11 @@
 import pymem
 import pymem.exception
+import pymem.process
 import psutil
+
 from functools import wraps
-from model import *
+from model import DivaString
+from address import DivaAddress
 
 class MemoryManager(pymem.Pymem):
     def __init__(self, program_name: str|int|None = None) -> None:
@@ -18,6 +21,7 @@ class MemoryManager(pymem.Pymem):
 
         if isinstance(self.program_name, int):
             self.open_process_from_id(self.program_name)
+
         elif isinstance(self.program_name, str):
             self.open_process_from_name(self.program_name)
 
@@ -54,6 +58,7 @@ class MemoryManager(pymem.Pymem):
                 currect_address += 1
             except pymem.exception.MemoryReadError:
                 break
+
         return c_string.decode()
 
 class DivaMemoryManager(MemoryManager):
@@ -67,10 +72,8 @@ class DivaMemoryManager(MemoryManager):
     
     @property
     def check_new_classics(self) -> bool:
-        for module in self.list_modules():
-            if module.name == "NewClassics.dll":
-                return True
-        return False
+        module = pymem.process.module_from_name(self, "NewClassics.dll")
+        return module is not None
     
     @staticmethod
     def check_running(method):
@@ -78,11 +81,12 @@ class DivaMemoryManager(MemoryManager):
         def wrapper(self, *args, **kwargs):
             if self.is_running:
                 return method(self, *args, **kwargs)
-            else:
-                # 尝试重新加载
-                self.open_program()
-                if self.is_running == False:
-                    raise pymem.exception.ProcessNotFound("Diva is not running")
+
+            self.open_program()
+            if self.is_running:
+                return method(self, *args, **kwargs)
+
+            raise pymem.exception.ProcessNotFound("Diva is not running")
 
         return wrapper
     
@@ -101,90 +105,3 @@ class DivaMemoryManager(MemoryManager):
         
         return string
 
-
-@DivaMemoryManager.check_running
-def get_rom_folder_list(manager:DivaMemoryManager) -> list[str]:
-    import ctypes
-    string_list = []
-    start_address = DivaAddress.DBFolderInfo.first.get_address(manager)
-    end_address = DivaAddress.DBFolderInfo.last.get_address(manager)
-
-    currect_address: int = start_address
-    count = abs(end_address - start_address) // ctypes.sizeof(DivaString)
-    
-    for _ in range(count):
-        string_list.append(manager.read_diva_string(currect_address))
-        currect_address += ctypes.sizeof(DivaString)
-    
-    return string_list    
-
-@DivaMemoryManager.check_running
-def get_pvid_list(manager:DivaMemoryManager) -> list[int]:
-    start_address = DivaAddress.DBInfo.first.get_address(manager)
-    end_address = DivaAddress.DBInfo.last.get_address(manager)
-    
-    pvid_list: list = []
-    currect_address: int = start_address
-    count = abs(end_address - start_address) // 8
-    
-    for _ in range(count):
-        pvdb_address = manager.read_ulonglong(currect_address)
-        pv_id = manager.read_uint(pvdb_address)
-        pvid_list.append(pv_id)
-        if pv_id == 72:
-            pass
-        currect_address += 8
-    
-    return pvid_list    
-
-@DivaMemoryManager.check_running
-def get_selected_song(manager:DivaMemoryManager) -> int:
-    # 0表示非选歌界面
-    # -1表示错误状态
-    # -2表示选中随机打歌
-    # 其他表示当前ID
-    random_address = DivaAddress.GetSelectSong.random.get_address(manager)
-    select_address = DivaAddress.GetSelectSong.selected.get_address(manager)
-
-    if isinstance(random_address, int) and random_address >0:
-        selected_pvid = manager.read_int(random_address)
-        assert isinstance(selected_pvid, int)
-    elif isinstance(select_address, int) and select_address >0:
-        selected_pvid = manager.read_int(select_address)
-        assert isinstance(selected_pvid, int)
-    else:
-        selected_pvid = -1
-    return selected_pvid
-
-@DivaMemoryManager.check_running
-def get_new_class_mode(manager:DivaMemoryManager) -> int:
-    currect_mode_address = NewClassicsAddress.Mode.state.get_address(manager)
-    try:
-        if currect_mode_address:
-            currect_mode = manager.read_int(currect_mode_address)
-            return currect_mode if isinstance(currect_mode, int) else NewClassicsStyle.ARCADE
-        else:
-            return NewClassicsStyle.ARCADE
-    except pymem.exception.MemoryReadError|pymem.exception.ProcessNotFound:
-        return NewClassicsStyle.ARCADE
-
-
-@DivaMemoryManager.check_running
-def get_db_loader_log(manager:DivaMemoryManager) -> str:
-    address = DivaAddress.DBLogger.address.get_address(manager)
-    if address:
-        db_log = manager.read_cstring(address)
-        if isinstance(db_log, str):
-            return db_log
-
-    return ""
-
-if __name__ == "__main__":
-    a = DivaMemoryManager()
-    print(get_rom_folder_list(a))
-    print(get_pvid_list(a))
-    print(len(get_pvid_list(a)))
-    print(NewClassicsStyle(get_new_class_mode(a)).name)
-    print(get_db_loader_log(a))
-    while True:
-        print(NewClassicsStyle(get_new_class_mode(a)).name)
