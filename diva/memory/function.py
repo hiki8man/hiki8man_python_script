@@ -169,7 +169,7 @@ def switch_song(manager:DivaMemoryManager, song:SwitchSong) -> int:
             last_diff_value_address += DivaAddress.Offset.eden
 
         manager.write_int(last_pvid_address, song.pvid)
-        manager.write_int(last_sort_address, 1) # diff排序
+        manager.write_int(last_sort_address, SelectSort.by_difficulty) # diff排序
         manager.write_int(last_diff_type_address, song.difficulty)
         manager.write_int(last_diff_value_address, 19) # all
         switch_new_class_mode(manager, song.style)
@@ -203,7 +203,6 @@ def get_db_loader_log(manager:DivaMemoryManager) -> str:
     '''
     返回db loader日志
     '''
-    
     address = DivaAddress.DBLogger.address.get_address(manager)
     if not address:
         return ""
