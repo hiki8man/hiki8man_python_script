@@ -53,6 +53,9 @@ class DivaAddress:
     
     class GetSelectDifficulty:
         pattern: PatternSrting = PatternSrting(
+            br"\x48\x8D\x05...."
+            br"\xC3"
+            br"\xCC\xCC\xCC\xCC\xCC\xCC\xCC\xCC"
             br"\x48\x89\x5C\x24\x08"
             br"\x48\x89\x6C\x24\x10"
             br"\x48\x89\x74\x24\x18"
@@ -60,7 +63,7 @@ class DivaAddress:
             br"\x48\x83\xEC\x20"
             br"\x33\xED"
             br"\x48\xC7\x41\x20\xFF\xFF\xFF\xFF",
-            offset=-16, lenght=7
+            offset=0, lenght=7
         )
         #type: Address = Address(0x16E2B90)
         #is_ex: Address = Address(0x16E2B94)
