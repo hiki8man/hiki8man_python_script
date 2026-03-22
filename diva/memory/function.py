@@ -70,6 +70,29 @@ def get_selected_song(manager:DivaMemoryManager) -> int:
     return selected_pvid if isinstance(selected_pvid, int) else -1
 
 @DivaMemoryManager.check_running
+def get_selected_difficulty(manager: DivaMemoryManager) -> int:
+    # -2表示错误状态
+    # -1表示难度不存在
+    # 其他表示难度
+    try:
+        type_address = DivaAddress.GetSelectDifficulty.type.get_address(manager)
+        flag_address = DivaAddress.GetSelectDifficulty.is_ex.get_address(manager)
+        
+        type = manager.read_int(type_address)
+        flag = manager.read_bool(flag_address)
+
+        if not isinstance(type, int) or not isinstance(flag, bool):
+            return -2
+        
+        selected_difficulty = StoredDifficulty.get_selected_difficulty(type, flag)
+        return selected_difficulty
+
+    except PYMEM_ERRORS:
+        return -2
+    except ValueError:
+        return -1
+
+@DivaMemoryManager.check_running
 def get_new_class_mode(manager:DivaMemoryManager) -> int:
     '''
     返回谱面风格，如果错误则返回ARCADE
@@ -210,6 +233,7 @@ def get_db_loader_log(manager:DivaMemoryManager) -> str:
     db_log = manager.read_cstring(address)
     return db_log if isinstance(db_log, str) else ""
 
+
 if __name__ == "__main__":
     a = DivaMemoryManager()
     print(get_rom_folder_list(a))
@@ -220,4 +244,6 @@ if __name__ == "__main__":
     print(GameState(get_currect_state(a)).name)
     # print(switch_song(a, SwitchSong(722, Difficulty.EASY, NewClassicsStyle.ARCADE)))
     print(get_now_playing(a))
+    while True:
+        print(StoredDifficulty(get_selected_difficulty(a)).name)
  

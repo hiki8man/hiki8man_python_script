@@ -18,18 +18,42 @@ class NewClassicsStyle(IntEnum):
     def _missing_(cls, value) -> int:
         return cls.UNKNOW
 
-class Difficulty(IntEnum):
+class GameDifficulty(IntEnum):
+    EASY = 0
+    NORMAL = 1
+    HARD = 2
+    EXTREME = 3
+    ENCORE = 4
+    
+class StoredDifficulty(IntEnum):
     EASY = 0
     NORMAL = 1
     HARD = 2
     EXTREME = 3
     EXEXTREME = 4
-    ENCORE = 5
+
+    @classmethod
+    def get_selected_difficulty(cls, type: int, is_ex: bool) -> "StoredDifficulty":
+ 
+        match type:
+            case GameDifficulty.EASY:
+                return cls.EASY
+            case GameDifficulty.NORMAL:
+                return cls.NORMAL
+            case GameDifficulty.HARD:
+                return cls.HARD
+            case GameDifficulty.EXTREME:
+                return cls.EXEXTREME if is_ex else cls.EXTREME
+            case GameDifficulty.ENCORE:
+                raise ValueError("Encore is not support on MM+")
+            case _:
+                raise ValueError("Unknown difficulty")
+        pass    
 
 @dataclass(frozen=True)
 class SwitchSong:
     pvid: int
-    difficulty: Difficulty
+    difficulty: StoredDifficulty
     style: NewClassicsStyle = NewClassicsStyle.ARCADE
 
 class SelectState(IntEnum):

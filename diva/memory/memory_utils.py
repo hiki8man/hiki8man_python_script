@@ -51,38 +51,52 @@ class DynamicOffset(ABC):
 @dataclass(frozen=True)
 class DynamicOffset32(DynamicOffset):
     def _get_value(self, process_pymem: pymem.Pymem) -> int:
-        value = process_pymem.read_uint(self.base)
+        value = process_pymem.read_int(self.base)
         assert isinstance(value, int)
         return value + self.offset
 
 @dataclass(frozen=True)
 class DynamicOffset64(DynamicOffset):
     def _get_value(self, process_pymem: pymem.Pymem) -> int:
-        value = process_pymem.read_ulonglong(self.base)
+        value = process_pymem.read_longlong(self.base)
         assert isinstance(value, int)
         return value + self.offset
 
 @dataclass(frozen=True)
+class PatternSrting():
+    bytes: bytes
+    offset: int
+    lenght: int
+
+
+@dataclass(frozen=True)
 class PatternScan():
-    patter_bytes: bytes
-    address_offset: int = 0
+    patter: PatternSrting
+    offset: int = 0
+    use_read64: bool =False
+
     
     def get_address(self, process_pymem: pymem.Pymem, _module_name: str = "") -> int:
-        if not self.patter_bytes:
+        if not self.patter.bytes:
             return 0
         
         return_address: int = 0
         module = get_module(process_pymem, _module_name)
 
-        scan_address = process_pymem.pattern_scan_module(self.patter_bytes, module)
+        scan_address = process_pymem.pattern_scan_module(self.patter.bytes, module)
         if not isinstance(scan_address, int):
             return 0
         
-        offset = process_pymem.read_int(scan_address + self.address_offset)
+        command_address = scan_address + self.patter.offset
+        if self.use_read64:
+            offset = process_pymem.read_longlong(command_address + self.patter.lenght - 8)
+        else:
+            offset = process_pymem.read_int(command_address + self.patter.lenght - 4)
+
         if offset and isinstance(offset, int):
-            return_address = offset + scan_address + self.address_offset + 4
+            return_address = offset + command_address + self.patter.lenght + self.offset
     
-        return 0 if return_address <= 0 else return_address
+        return 0 if return_address <= 0 else return_address 
         
 
 @dataclass(frozen=True)
@@ -105,9 +119,9 @@ class Pointer():
 
         for offset in self.offset:
             if offset.use_read64:
-                finally_address = process_pymem.read_ulonglong(finally_address)
+                finally_address = process_pymem.read_longlong(finally_address)
             else:
-                finally_address = process_pymem.read_uint(finally_address)
+                finally_address = process_pymem.read_int(finally_address)
             if isinstance(finally_address, int):
                 finally_address = finally_address + offset.get_value(process_pymem)
             else:

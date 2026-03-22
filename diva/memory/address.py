@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from memory_utils import Address, Pointer, DynamicOffset32, DynamicOffset64, StaticOffset32, StaticOffset64, PatternScan
+from memory_utils import Address, Pointer, DynamicOffset32, DynamicOffset64, StaticOffset32, StaticOffset64, PatternScan, PatternSrting
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,23 @@ class DivaAddress:
                 -0x9c8
             )
         )
-        
+    
+    class GetSelectDifficulty:
+        pattern: PatternSrting = PatternSrting(
+            br"\x48\x89\x5C\x24\x08"
+            br"\x48\x89\x6C\x24\x10"
+            br"\x48\x89\x74\x24\x18"
+            br"\x57"
+            br"\x48\x83\xEC\x20"
+            br"\x33\xED"
+            br"\x48\xC7\x41\x20\xFF\xFF\xFF\xFF",
+            offset=-16, lenght=7
+        )
+        #type: Address = Address(0x16E2B90)
+        #is_ex: Address = Address(0x16E2B94)
+        type: Address = Address(PatternScan(pattern))
+        is_ex: Address = Address(PatternScan(pattern, 4))
+
     class DBInfo:
         first: Address = Address(Pointer(0x1753818))
         last: Address = Address(Pointer(0x1753820))
@@ -67,5 +83,15 @@ class DivaAddress:
 @dataclass(frozen=True)
 class NewClassicsAddress:
     class Mode:
-        pattern: bytes = b"\x74\x0B\x8B\x88....\x83\xF9\x03\x75\x02\x33\xC9\x89\x0D....\x40\x0F\xB6\xC7\x48\x8B"
-        state: Address = Address(PatternScan(pattern, 17), "NewClassics.dll")
+        pattern: PatternSrting = PatternSrting(
+            br"\x74\x0B"
+            br"\x8B\x88...."
+            br"\x83\xF9\x03"
+            br"\x75\x02"
+            br"\x33\xC9"
+            br"\x89\x0D...."
+            br"\x40\x0F\xB6\xC7"
+            br"\x48\x8B\xC4\x30",
+            offset=15, lenght=6
+        )
+        state: Address = Address(PatternScan(pattern), "NewClassics.dll")
