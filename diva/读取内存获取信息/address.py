@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from memory_utils import Address, Pointer, DynamicOffset32, DynamicOffset64, StaticOffset32, StaticOffset64, PatternScan, PatternSrting
+from memory_utils import Address, Pointer, DynamicOffset32, DynamicOffset64, StaticOffset32, StaticOffset64, PatternScan, PatternString
 
 
 @dataclass(frozen=True)
@@ -52,6 +52,7 @@ class DivaAddress:
         )
     
     class GetSelectDifficulty:
+        '''基址扫描版，需要重构基址扫描机制
         pattern: PatternSrting = PatternSrting(
             br"\x48\x8D\x05...."
             br"\xC3"
@@ -65,10 +66,12 @@ class DivaAddress:
             br"\x48\xC7\x41\x20\xFF\xFF\xFF\xFF",
             offset=0, lenght=7
         )
-        #type: Address = Address(0x16E2B90)
-        #is_ex: Address = Address(0x16E2B94)
         type: Address = Address(PatternScan(pattern))
         is_ex: Address = Address(PatternScan(pattern, 4))
+        '''
+        type: Address = Address(0x16E2B90)
+        is_ex: Address = Address(0x16E2B94)
+
 
     class DBInfo:
         first: Address = Address(Pointer(0x1753818))
@@ -86,7 +89,7 @@ class DivaAddress:
 @dataclass(frozen=True)
 class NewClassicsAddress:
     class Mode:
-        pattern: PatternSrting = PatternSrting(
+        pattern: PatternString = PatternString(
             br"\x74\x0B"
             br"\x8B\x88...."
             br"\x83\xF9\x03"

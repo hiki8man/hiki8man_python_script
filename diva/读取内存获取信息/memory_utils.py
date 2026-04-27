@@ -27,11 +27,13 @@ class StaticOffset(ABC):
 
 @dataclass(frozen=True)
 class StaticOffset32(StaticOffset):
+    @property
     def use_read64(self) -> bool:
         return False
 
 @dataclass(frozen=True)
 class StaticOffset64(StaticOffset):
+    @property
     def use_read64(self) -> bool:
         return True
 
@@ -63,47 +65,60 @@ class DynamicOffset64(DynamicOffset):
         return value + self.offset
 
 @dataclass(frozen=True)
-class PatternSrting():
+class PatternString():
     bytes: bytes
-    offset: int
-    lenght: int
+    offset: int # 指令从哪里开始
+    lenght: int # 指令长度，实际使用时会加上offset然后-4获取地址的值
+
+class PatternStrong:
+    def __init__(self) -> None:
+        self.address_dict: dict[PatternString, int] = {}
 
 
-@dataclass(frozen=True)
-class PatternScan():
-    patter: PatternSrting
-    offset: int = 0
-    use_read64: bool =False
+class PatternScan:
+    # 将扫描过的地址缓存在这里
+    strong_address:dict[PatternString, int] = {}
 
-    
+    def __init__(self,pattern: PatternString, offset: int = 0, use_read64: bool = False) -> None:
+        self.pattern: PatternString = pattern
+        self.offset: int = offset
+        self.use_read64: bool = use_read64
+
     def get_address(self, process_pymem: pymem.Pymem, _module_name: str = "") -> int:
-        if not self.patter.bytes:
+        if not self.pattern.bytes:
             return 0
         
-        return_address: int = 0
-        module = get_module(process_pymem, _module_name)
+        if self.pattern in PatternScan.strong_address == False:
 
-        scan_address = process_pymem.pattern_scan_module(self.patter.bytes, module)
-        if not isinstance(scan_address, int):
-            return 0
-        
-        command_address = scan_address + self.patter.offset
-        if self.use_read64:
-            offset = process_pymem.read_longlong(command_address + self.patter.lenght - 8)
-        else:
-            offset = process_pymem.read_int(command_address + self.patter.lenght - 4)
+            return_address: int = 0
+            module = get_module(process_pymem, _module_name)
 
-        if offset and isinstance(offset, int):
-            return_address = offset + command_address + self.patter.lenght + self.offset
-    
-        return 0 if return_address <= 0 else return_address 
-        
+            scan_address = process_pymem.pattern_scan_module(self.pattern.bytes, module)
+            if not isinstance(scan_address, int):
+                return 0
+            
+            command_address = scan_address + self.pattern.offset
+            if self.use_read64:
+                offset = process_pymem.read_longlong(command_address + self.pattern.lenght - 8)
+            else:
+                offset = process_pymem.read_int(command_address + self.pattern.lenght - 4)
+
+            if offset and isinstance(offset, int):
+                return_address = offset + command_address + self.pattern.lenght + self.offset
+            
+            if return_address < 0:
+                PatternScan.strong_address.update({self.pattern:0})
+            else:
+                PatternScan.strong_address.update({self.pattern:return_address})
+
+        return PatternScan.strong_address[self.pattern]
+
 
 @dataclass(frozen=True)
 class Pointer():
     base: int|PatternScan
     offset: Sequence[DynamicOffset|StaticOffset] = field(default_factory=lambda: [StaticOffset32(0)])
-    finally_offset: int = 0
+    final_offset: int = 0
 
     def __post_init__(self):
         if isinstance(self.base, int) and self.base <= 0:
@@ -113,23 +128,23 @@ class Pointer():
         base_address:int = get_module_address(process_pymem, _module_name)
 
         if isinstance(self.base ,int):
-            finally_address = base_address + self.base
+            final_address = base_address + self.base
         else:
-            finally_address = base_address + self.base.get_address(process_pymem)
+            final_address = base_address + self.base.get_address(process_pymem)
 
         for offset in self.offset:
             if offset.use_read64:
-                finally_address = process_pymem.read_longlong(finally_address)
+                final_address = process_pymem.read_longlong(final_address)
             else:
-                finally_address = process_pymem.read_int(finally_address)
-            if isinstance(finally_address, int):
-                finally_address = finally_address + offset.get_value(process_pymem)
+                final_address = process_pymem.read_int(final_address)
+            if isinstance(final_address, int):
+                final_address = final_address + offset.get_value(process_pymem)
             else:
                 return 0
 
-        finally_address += self.finally_offset
+        final_address += self.final_offset
 
-        return 0 if finally_address <= 0 else finally_address
+        return 0 if final_address <= 0 else final_address
         
 @dataclass(frozen=True)
 class Address(ABC):
