@@ -86,6 +86,10 @@ class DivaMemoryManager(MemoryManager):
             if self.is_running:
                 return method(self, *args, **kwargs)
 
+            #程序没有运行，清空基址扫描缓存然后重新尝试获取程序
+            from memory_utils import PatternScan
+            PatternScan.strong_address.clear()
+
             self.reboot()
             if self.is_running:
                 return method(self, *args, **kwargs)

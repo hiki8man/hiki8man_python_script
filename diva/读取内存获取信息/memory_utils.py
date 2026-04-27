@@ -70,11 +70,6 @@ class PatternString():
     offset: int # 指令从哪里开始
     lenght: int # 指令长度，实际使用时会加上offset然后-4获取地址的值
 
-class PatternStrong:
-    def __init__(self) -> None:
-        self.address_dict: dict[PatternString, int] = {}
-
-
 class PatternScan:
     # 将扫描过的地址缓存在这里
     strong_address:dict[PatternString, int] = {}
