@@ -1,9 +1,7 @@
-
 from dataclasses import dataclass
 import math
 from enum import Enum
 from collections import Counter
-from turtle import right
 from functools import cmp_to_key
 
 class Shape(Enum):
@@ -23,7 +21,8 @@ class Vector:
         elif isinstance(other, (int, float)):
             return Vector(self.x + other, self.y + other)
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for +: 'Vector' and '{type(other).__name__}'")
+
     def __sub__(self, other) -> "Vector":
         # a - b
         if isinstance(other, Vector):
@@ -31,35 +30,35 @@ class Vector:
         elif isinstance(other, (int, float)):
             return Vector(self.x - other, self.y - other)
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for -: 'Vector' and '{type(other).__name__}'")
 
     def __truediv__(self, other) -> "Vector":
         # a / b
         if isinstance(other, (int, float)):
             return Vector(self.x / other, self.y / other)
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for /: 'Vector' and '{type(other).__name__}'")
 
     def dot(self, other) -> float:
         # a.b
         if isinstance(other, Vector):
             return self.x * other.x + self.y * other.y
         else:
-            raise TypeError()
-    
+            raise TypeError(f"unsupported operand type(s) for dot(): 'Vector' and '{type(other).__name__}'")
+
     def cross(self, other) -> float:
         # a.b
         if isinstance(other, Vector):
             return self.x * other.y - self.y * other.x
         else:
-            raise TypeError()
-    
+            raise TypeError(f"unsupported operand type(s) for cross(): 'Vector' and '{type(other).__name__}'")
+
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
 def get_shape_type(multi_note: list[Vector]) -> Shape:
     if len(multi_note) == 0:
-        raise ValueError()
+        raise ValueError("multi_note list is empty")
     
     if len(multi_note) == 1:
         return Shape.POINT
@@ -169,7 +168,7 @@ def multi_connect(multi_note: list[Vector]):
     multi_count = len(multi_note)
 
     if multi_count == 0:
-        raise ValueError("至少需要一个点")
+        raise ValueError("multi_note list is empty")
     
     if multi_count == 1:
         return multi_note[0]

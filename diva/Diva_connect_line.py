@@ -21,7 +21,7 @@ class Vector:
         elif isinstance(other, (int, float)):
             return Vector(self.x + other, self.y + other)
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for +: 'Vector' and '{type(other).__name__}'")
 
     def __sub__(self, other) -> "Vector":
         # a - b
@@ -30,35 +30,35 @@ class Vector:
         elif isinstance(other, (int, float)):
             return Vector(self.x - other, self.y - other)
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for -: 'Vector' and '{type(other).__name__}'")
 
     def __truediv__(self, other) -> "Vector":
         # a / b
         if isinstance(other, (int, float)):
             return Vector(self.x / other, self.y / other)
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for /: 'Vector' and '{type(other).__name__}'")
 
     def dot(self, other) -> float:
         # a.b
         if isinstance(other, Vector):
             return self.x * other.x + self.y * other.y
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for dot(): 'Vector' and '{type(other).__name__}'")
 
     def cross(self, other) -> float:
         # a.b
         if isinstance(other, Vector):
             return self.x * other.y - self.y * other.x
         else:
-            raise TypeError()
+            raise TypeError(f"unsupported operand type(s) for cross(): 'Vector' and '{type(other).__name__}'")
 
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
 def get_shape_type(multi_note: list[Vector]) -> Shape:
     if len(multi_note) == 0:
-        raise ValueError()
+        raise ValueError("multi_note list is empty")
     
     if len(multi_note) == 1:
         return Shape.POINT
@@ -116,6 +116,7 @@ def get_shape_type(multi_note: list[Vector]) -> Shape:
     else:
         return Shape.LINE
 
+# 极角排序
 def polar_angle_sort(multi_note: list[Vector]) -> list[Vector]:
     count = len(multi_note)
     centorid = Vector(0,0)
@@ -124,17 +125,19 @@ def polar_angle_sort(multi_note: list[Vector]) -> list[Vector]:
         centorid = centorid + note
     centorid = centorid / count
 
-    def sorted_func(note) -> float:
+    def sorted_func(note) -> tuple[float, float]:
         angle = math.atan2(note.y - centorid.y, note.x - centorid.x)
+        distance = (note.x - centorid.x)**2 + (note.y - centorid.y)**2
         if angle < 0:
-            return angle + 2 * math.pi
+            angle += 2 * math.pi
 
-        return angle
+        return (angle,distance)
 
     multi_note.sort(key=sorted_func) 
 
     return multi_note
 
+# 逆时针极角排序的叉积实现
 def polar_angle_sort_cross(multi_note: list[Vector]) -> list[Vector]:
     count = len(multi_note)
     centorid = Vector(0,0)
@@ -168,7 +171,7 @@ def multi_connect(multi_note: list[Vector]):
     multi_count = len(multi_note)
 
     if multi_count == 0:
-        raise ValueError("至少需要一个点")
+        raise ValueError("multi_note list is empty")
     
     if multi_count == 1:
         return multi_note[0]
