@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 import math
 from enum import Enum
@@ -6,9 +5,9 @@ from collections import Counter
 from functools import cmp_to_key
 
 class Shape(Enum):
-    POLYGON = 0
+    POINT = 0
     LINE = 1
-    POINT = -1
+    POLYGON = 2
 
 @dataclass(frozen=True)
 class Vector:
@@ -23,6 +22,7 @@ class Vector:
             return Vector(self.x + other, self.y + other)
         else:
             raise TypeError()
+
     def __sub__(self, other) -> "Vector":
         # a - b
         if isinstance(other, Vector):
@@ -45,62 +45,72 @@ class Vector:
             return self.x * other.x + self.y * other.y
         else:
             raise TypeError()
-    
+
     def cross(self, other) -> float:
         # a.b
         if isinstance(other, Vector):
             return self.x * other.y - self.y * other.x
         else:
             raise TypeError()
-    
+
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
 def get_shape_type(multi_note: list[Vector]) -> Shape:
-    same_count_dict = Counter(multi_note)
+    if len(multi_note) == 0:
+        raise ValueError()
+    
+    if len(multi_note) == 1:
+        return Shape.POINT
+    
+    if len(multi_note) == 2:
+        return Shape.LINE
 
-    is_line = True
-    is_same = False
-    diva_check = False
+    def diva_polygon_check(same_count_dict:dict[Vector, int]) -> bool:
+        # 只有在所有点共线的时候才会调用函数
+        top_note:Vector    = max(same_count_dict.keys(), key= lambda p: p.y)
+        bottom_note:Vector = min(same_count_dict.keys(), key= lambda p: p.y)
+
+        # 判断是否是垂直线
+        if top_note.x == bottom_note.x:
+            return False
+        # 判断是否是水平线
+        if top_note.y == bottom_note.y:
+            return False
+        # 处理Diva的情况
+        if same_count_dict[top_note] > same_count_dict[bottom_note]:
+            return False
+
+        return True
+
+    is_dot: bool = False
+    is_polygon: bool = False
+    is_diva_polygon: bool = False
 
     note_pre2: None|Vector = multi_note[0]
     note_pre1: None|Vector = multi_note[1]
 
     for i in range(2, len(multi_note)):
         note_cur = multi_note[i]
-        if is_line:
+        if is_polygon == False:
             vet1 = note_pre1 - note_pre2
             vet2 = note_cur - note_pre2
-            is_line = (vet1.cross(vet2) == 0)
+            is_polygon = (vet1.cross(vet2) != 0)
         else:
-            break
-        
+            return Shape.POLYGON
+
+    same_count_dict = Counter(multi_note)
+
     if len(same_count_dict) == 1:
-        is_same = True
+        is_dot = True
     
-    if len(same_count_dict) == 2:
-        diva_check = True
-        single:None|Vector = None
-        multi:None|Vector = None
+    elif len(same_count_dict) < len(multi_note):
+        is_diva_polygon = diva_polygon_check(same_count_dict)
 
-        keys:list[Vector] = list(same_count_dict.keys())
-        
-        if same_count_dict[keys[0]] > same_count_dict[keys[1]] and same_count_dict[keys[1]] == 1:
-            single, multi = keys[1], keys[0]
-            
-        elif same_count_dict[keys[0]] < same_count_dict[keys[1]] and same_count_dict[keys[0]] == 1:
-            single, multi = keys[0], keys[1]
-
-        if isinstance(single, Vector) and isinstance(multi, Vector):
-            diva_check = (multi.y - single.y) <= 0
-
-    if is_line == False and is_same == False:
+    if is_diva_polygon:
         return Shape.POLYGON
 
-    elif diva_check:
-        return Shape.POLYGON
-
-    elif is_same:
+    elif is_dot:
         return Shape.POINT
 
     else:
@@ -146,12 +156,12 @@ def polar_angle_sort_cross(multi_note: list[Vector]) -> list[Vector]:
             return 0
 
     top_note = [note for note in multi_note if note.y > centorid.y]
-    button_note = [note for note in multi_note if not note in top_note]
+    bottom_note = [note for note in multi_note if not note in top_note]
 
     top_note.sort(key=cmp_to_key(cmp_cross))
-    button_note.sort(key=cmp_to_key(cmp_cross))
+    bottom_note.sort(key=cmp_to_key(cmp_cross))
 
-    return top_note + button_note
+    return top_note + bottom_note
 
 def multi_connect(multi_note: list[Vector]):
     # 多押连接线调用函数
