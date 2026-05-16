@@ -54,9 +54,6 @@ class Vector:
         else:
             raise TypeError()
     
-    def to_tuple(self) -> tuple[float, float]:
-        return (self.x, self.y)
-    
     def __hash__(self) -> int:
         return hash((self.x, self.y))
 
@@ -83,19 +80,20 @@ def get_shape_type(multi_note: list[Vector]) -> Shape:
         is_same = True
     
     if len(same_count_dict) == 2:
+        diva_check = True
         single:None|Vector = None
         multi:None|Vector = None
 
         keys:list[Vector] = list(same_count_dict.keys())
         
-        if same_count_dict[keys[0]] > same_count_dict[keys[1]]:
+        if same_count_dict[keys[0]] > same_count_dict[keys[1]] and same_count_dict[keys[1]] == 1:
             single, multi = keys[1], keys[0]
             
-        elif same_count_dict[keys[0]] < same_count_dict[keys[1]]:
+        elif same_count_dict[keys[0]] < same_count_dict[keys[1]] and same_count_dict[keys[0]] == 1:
             single, multi = keys[0], keys[1]
 
         if isinstance(single, Vector) and isinstance(multi, Vector):
-            diva_check = (multi.y - single.y) < 0
+            diva_check = (multi.y - single.y) <= 0
 
     if is_line == False and is_same == False:
         return Shape.POLYGON
@@ -136,29 +134,39 @@ def polar_angle_sort_cross(multi_note: list[Vector]) -> list[Vector]:
         centorid = centorid + note
     centorid = centorid / count
 
-    def sorted_func(note):
-        angle = math.atan2(note.y - centorid.y, note.x - centorid.x)
-        if angle < 0:
-            return angle + 2 * math.pi
+    def cmp_cross(point_a:Vector, point_b:Vector) -> int:
+        vet1:Vector = point_a - centorid
+        vet2:Vector = point_b - point_a
+        cross = vet1.cross(vet2)
 
-        return angle
+        if cross < 0:
+            return -1
+        elif cross > 0:
+            return 1
+        else:
+            return 0
 
+    top_note = [note for note in multi_note if note.y > centorid.y]
+    button_note = [note for note in multi_note if not note in top_note]
 
-    same_note = [note for note in multi_note if note == centorid]
-    other_note = [note for note in multi_note if note != centorid]
+    top_note.sort(key=cmp_to_key(cmp_cross))
+    button_note.sort(key=cmp_to_key(cmp_cross))
 
-    other_note =  sorted(other_note, key=sorted_func)
-
-    return same_note + other_note
+    return top_note + button_note
 
 def multi_connect(multi_note: list[Vector]):
     # 多押连接线调用函数
     multi_count = len(multi_note)
 
-    if multi_count < 2:
-        # 错误情况，不执行操作
-        pass
+    if multi_count == 0:
+        raise ValueError("至少需要一个点")
     
+    if multi_count == 1:
+        return multi_note[0]
+    
+    if multi_count == 2:
+        return multi_note
+
     shape_type = get_shape_type(multi_note)
 
     if shape_type == Shape.LINE:
@@ -169,13 +177,8 @@ def multi_connect(multi_note: list[Vector]):
         multi_note.append(multi_note[0])
         return multi_note
 
-    elif multi_count < 4:
-        # 能确定情况的直接按默认顺序连接
-        multi_note.append(multi_note[0])
-        return multi_note
-
     else:
-        multi_note = polar_angle_sort(multi_note)
+        multi_note = polar_angle_sort_cross(multi_note)
         multi_note.append(multi_note[0])
         return multi_note
 
