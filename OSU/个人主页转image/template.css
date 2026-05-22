@@ -1,0 +1,344 @@
+/* osu bbcode-only styles (trimmed) */
+html {
+    font-family: sans-serif;
+    -webkit-text-size-adjust: 100%
+}
+
+
+@font-face {
+    font-display: block;
+    font-family: Font Awesome\ 5 Free;
+    font-style: normal;
+    font-weight: 900;
+    src: url(fonts/fa-solid-900.woff2) format("woff2"), url(fonts/fa-solid-900.woff) format("woff")
+}
+
+@font-face {
+    font-display: swap;
+    font-family: WenYuanSansSC;
+    font-style: normal;
+    font-weight: 400;
+    src:url(fonts/WenYuanSansSC-Regular.otf) format("opentype")
+}
+@font-face {
+    font-display: swap;
+    font-family: WenYuanSansSC;
+    font-style: normal;
+    font-weight: 700;
+    src:url(fonts/WenYuanSansSC-Bold.otf) format("opentype")
+}
+
+.fa,
+.fas {
+    font-weight: 900
+}
+
+body {
+    --base-hue-default: 255;
+    --base-hue-override: {{user_profile_hue}};
+    --base-hue: var(--base-hue-override, var(--base-hue-default));
+    --font-content: WenYuanSansSC, sans-serif;
+    --hsl-p: var(--base-hue),100%,50%;
+    --hsl-h1: var(--base-hue),100%,70%;
+    --hsl-h2: var(--base-hue),50%,45%;
+    --hsl-c1: var(--base-hue),40%,100%;
+    --hsl-c2: var(--base-hue),40%,90%;
+    --hsl-l1: var(--base-hue),40%,80%;
+    --hsl-l2: var(--base-hue),40%,75%;
+    --hsl-l3: var(--base-hue),40%,70%;
+    --hsl-l4: var(--base-hue),40%,50%;
+    --hsl-d1: var(--base-hue),20%,35%;
+    --hsl-d2: var(--base-hue),20%,30%;
+    --hsl-d3: var(--base-hue),20%,25%;
+    --hsl-d4: var(--base-hue),20%,20%;
+    --hsl-d5: var(--base-hue),20%,15%;
+    --hsl-d6: var(--base-hue),20%,10%;
+    --hsl-f1: var(--base-hue),10%,60%;
+    --hsl-b1: var(--base-hue),10%,40%;
+    --hsl-b2: var(--base-hue),10%,30%;
+    --hsl-b3: var(--base-hue),10%,25%;
+    --hsl-b4: var(--base-hue),10%,20%;
+    --hsl-b5: var(--base-hue),10%,15%;
+    --hsl-b6: var(--base-hue),10%,10%;
+    color: hsl(var(--hsl-c1));
+    font-family: var(--font-content);
+    margin: 0 auto;
+    background-color: hsl(var(--hsl-b3));
+    max-width: 1000px;
+}
+
+h1 {
+    font-size: 30px;
+    margin: 0 0 20px
+}
+
+h1,
+h2 {
+    font-weight: 400
+}
+
+h2 {
+    margin: 10px 0 0
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: hsl(var(--hsl-c1))
+}
+
+a {
+    color: hsl(var(--hsl-l2));
+    outline-style: none;
+    text-decoration: none;
+    transition: color 80ms linear
+}
+
+a:active,
+a:focus,
+a:hover {
+    color: hsl(var(--hsl-l1))
+}
+
+a:active,
+a:hover,
+a:link,
+a:visited {
+    outline-style: none
+}
+
+a:hover {
+    text-decoration: underline
+}
+
+iframe {
+    border: none
+}
+
+.bbcode {
+    font-family: var(--font-content-override, var(--font-content));
+    line-height: 1.35;
+    --list-style-position: outside;
+    --list-padding-left: 20px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    text-align: left
+}
+
+.bbcode code {
+    background-color: hsl(var(--hsl-b5));
+    border-radius: 4px;
+    padding: 1px 4px
+}
+
+.bbcode h2,
+.bbcode h4 {
+    font-style: normal;
+    font-weight: 700
+}
+
+.bbcode h2 {
+    color: hsl(var(--hsl-l1));
+    font-size: 1.5em
+}
+
+.bbcode blockquote {
+    border: none;
+    color: hsl(var(--hsl-c2));
+    font-size: inherit;
+    padding: 0 0 0 20px;
+    position: relative
+}
+
+.bbcode blockquote:before {
+    background-color: hsl(var(--hsl-c2));
+    border-radius: 10000px;
+    content: "";
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 2px
+}
+
+.bbcode blockquote h4 {
+    color: hsl(var(--hsl-c1));
+    font-size: inherit;
+    margin: 0 0 10px
+}
+
+.bbcode blockquote blockquote {
+    font-size: .9em
+}
+
+.bbcode blockquote blockquote:before {
+    display: none
+}
+
+.bbcode blockquote blockquote h4 {
+    color: inherit
+}
+
+.bbcode blockquote blockquote blockquote blockquote blockquote {
+    font-size: 1em;
+    padding-left: 0
+}
+
+.bbcode img {
+    max-width: 100%;
+    width: auto; 
+    height: auto; 
+}
+
+.bbcode ol,
+.bbcode ul {
+    list-style-position: var(--list-style-position);
+    padding-left: var(--list-padding-left)
+}
+
+.bbcode pre {
+    background-color: hsl(var(--hsl-b5));
+    border: none;
+    border-radius: 4px;
+    color: inherit;
+    font-size: inherit;
+    padding: 10px;
+    white-space: pre-wrap
+}
+
+.bbcode .unordered {
+    list-style-type: disc
+}
+
+.bbcode .spoiler {
+    background-color: #000 !important;
+    color: #000 !important
+}
+
+.bbcode .well {
+    background: hsl(var(--hsl-b5));
+    border: 2px solid hsl(var(--hsl-b1));
+    margin: 0
+}
+
+.bbcode--normal-line-height {
+    line-height: inherit
+}
+
+.bbcode__list-title {
+    list-style: none;
+    margin: 0
+}
+
+.bbcode__align-centre {
+    --list-style-position: inside;
+    --list-padding-left: 0;
+    text-align: center
+}
+
+.bbcode__align-left {
+    --list-style-position: outside;
+    --list-padding-left: 20px;
+    text-align: left
+}
+
+.bbcode__align-right {
+    --list-style-position: inside;
+    --list-padding-left: 0;
+    text-align: right
+}
+
+.bbcode-spoilerbox {
+    --link-icon: "\f107"
+}
+
+.bbcode-spoilerbox.js-spoilerbox--open {
+    --link-icon: "\f107"
+}
+
+.bbcode-spoilerbox__body {
+    display: block;
+    margin-top: 10px;
+    padding-left: 20px
+}
+
+.bbcode-spoilerbox__link {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: none;
+    border: none;
+    color: hsl(var(--hsl-l2));
+    display: inline-flex;
+    flex-wrap: wrap;
+    font-weight: 700;
+    margin: 0;
+    max-width: 100%;
+    outline: none;
+    overflow-wrap: anywhere;
+    padding: 0;
+    width: -moz-max-content;
+    width: max-content
+}
+
+.bbcode-spoilerbox__link:active,
+.bbcode-spoilerbox__link:focus,
+.bbcode-spoilerbox__link:hover {
+    color: hsl(var(--hsl-l1))
+}
+
+.bbcode-spoilerbox__link:hover {
+    text-decoration: underline
+}
+
+.bbcode-spoilerbox__link-icon {
+    display: block;
+    flex: none;
+    text-align: left;
+    width: 20px
+}
+
+.bbcode-spoilerbox__link-icon:before {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    color: hsl(var(--hsl-c1));
+    content: var(--link-icon);
+    display: inline-block;
+    flex: none;
+    font-family: Font Awesome\ 5 Free;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 900;
+    line-height: 1;
+    text-align: left;
+    text-rendering: auto
+}
+
+.bbcode-spoilerbox__link-icon:before.fa-pull-left {
+    margin-right: .3em
+}
+
+.bbcode-spoilerbox__link-icon:before.fa-pull-right {
+    margin-left: .3em
+}
+
+.bbcode-spoilerbox__link-text {
+    flex: 1
+}
+
+.user-name {
+    font-weight: 700
+}
+
+.u-embed-wide {
+    aspect-ratio: 16/9;
+    display: block;
+    width: 100%
+}
+
+.u-embed-wide--bbcode {
+    display: inline-block;
+    max-width: 425px
+}
