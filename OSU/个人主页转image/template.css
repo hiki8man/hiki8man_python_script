@@ -35,7 +35,6 @@ html {
 
 body {
     --base-hue-default: 255;
-    --base-hue-override: {{user_profile_hue}};
     --base-hue: var(--base-hue-override, var(--base-hue-default));
     --font-content: WenYuanSansSC, sans-serif;
     --hsl-p: var(--base-hue),100%,50%;
