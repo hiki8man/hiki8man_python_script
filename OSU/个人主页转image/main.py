@@ -25,7 +25,7 @@ def get_user_json(osu_id:int) -> dict:
 def get_profile_image(user_id:int) -> bytes:
 
     data = get_user_json(user_id)
-    with open("template2.html", "r", encoding="utf-8") as f:
+    with open("template.html", "r", encoding="utf-8") as f:
         html = f.read()
 
     html = html.replace(r"{{user_page_html}}", data["user"]["page"]["html"])
