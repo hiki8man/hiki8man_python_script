@@ -22,7 +22,7 @@ def get_user_json(osu_id:int) -> dict:
             return {}
 
 
-def get_profile_image(user_id:int) -> bytes:
+def get_profile_image(user_id:int) -> list[bytes]:
 
     data = get_user_json(user_id)
     with open("template.html", "r", encoding="utf-8") as f:
@@ -31,17 +31,46 @@ def get_profile_image(user_id:int) -> bytes:
     html = html.replace(r"{{user_page_html}}", data["user"]["page"]["html"])
     html = html.replace(r"{{user_profile_hue}}", str(data["user"]["profile_hue"]))
 
-    book = plutoprint.Book(size=plutoprint.PageSize(1000,-1),media=plutoprint.MEDIA_TYPE_SCREEN)
+    book = plutoprint.Book(size=plutoprint.PageSize(1000,200), margins=plutoprint.PAGE_MARGINS_NONE,media=plutoprint.MEDIA_TYPE_PRINT)
     book.load_html(html)
 
-    data = io.BytesIO()
-    book.write_to_png_stream(data)
-    data.seek(0)
-    
-    return  data.getvalue()
+    # [TODO] 像zncookie这种图特别长的情况需要将图分为多个部分进行渲染，大小暂定10000
+    if book.get_page_count() <= 1:
+        data = io.BytesIO()
+        book.write_to_png_stream(data)
+        data.seek(0)
+        return  [data.getvalue()]
+    else:
+        data_list = []
+        total_pages = book.get_page_count()
+        # 3. 逐页渲染
+        for i in range(total_pages):
+            data = io.BytesIO()
+            # 获取当前页的尺寸，创建对应的画布
+            page_size = book.get_page_size_at(i)
+            width = page_size.width
+            height = page_size.height
 
+            # 创建画布并渲染当前页
+            with plutoprint.ImageCanvas(1140, 267) as canvas:
+                canvas.clear_surface(1, 1, 1) # 做一个hue转rgba
+                canvas.transform(1, 0, 0, 1, -120, 0)
+                book.render_page(canvas, i)  # 关键点：渲染特定页面
+                canvas.write_to_png_stream(data)
+                data.seek(0)
+                data_list.append(data.getvalue())
+        return data_list
 
 if __name__ == "__main__":
-    data = get_profile_image(15846580)
-    with open("test.png", "wb") as f:
-        f.write(data)
+    data_list:list[bytes] = get_profile_image(18230719)
+    conut = len(data_list)
+    # 修正ZnCookie超长的个人页面无法渲染的BUG
+    # 需要改成yeild节省内存
+    from PIL import Image
+    output_image = Image.new("RGB", (1140, 267 * conut))
+    for i in range(conut):
+        output_image.paste(Image.open(io.BytesIO(data_list[i])), (0, 267 * i))
+    
+    output_image.save("output.png")
+
+ 
