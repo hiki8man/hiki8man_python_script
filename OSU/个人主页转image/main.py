@@ -4,11 +4,31 @@ import httpx
 import json
 import re
 import html
-import imgkit
 from pathlib import Path
+from PIL import Image
+import time
 
-GET_USER_JSON = re.compile(r'data-initial-data="(.*)"\s+data-react="profile-page"')
-KIT = Path().joinpath("wkhtmltox","bin","wkhtmltoimage.exe")
+GET_USER_JSON: re.Pattern = re.compile(r'data-initial-data="(.*)"\s+data-react="profile-page"')
+WEBP_MAX: int = 8000 # 最大是16383，但QQ有大小限制10mb，保险起见削弱一下
+
+class DataFeather(plutoprint.ResourceFetcher):
+    def fetch_url(self, url: str):
+        if url.startswith("font://"):
+            font_path = Path("fonts").joinpath(url.replace("font://", ""))
+            with open(font_path, "rb") as f:
+                data = f.read()
+                
+            if font_path.suffix == ".otf":
+                return plutoprint.ResourceData(data, "font/otf")
+            elif font_path.suffix == ".woff":
+                return plutoprint.ResourceData(data, "font/woff")
+            elif font_path.suffix == ".woff2":
+                return plutoprint.ResourceData(data, "font/woff2")
+        
+        return super().fetch_url(url)
+    
+
+    
 def get_user_json(osu_id:int) -> dict:
     with httpx.Client(base_url="https://osu.ppy.sh",verify=False) as client:
         response = client.get(f"users/{osu_id}")
@@ -22,55 +42,56 @@ def get_user_json(osu_id:int) -> dict:
             return {}
 
 
-def get_profile_image(user_id:int) -> list[bytes]:
+def get_profile_image(user_id:int) -> None:
 
     data = get_user_json(user_id)
+
     with open("template.html", "r", encoding="utf-8") as f:
         html = f.read()
-
+    with open("template.css", "r", encoding="utf-8") as f:
+        css = f.read()
+        
     html = html.replace(r"{{user_page_html}}", data["user"]["page"]["html"])
-    html = html.replace(r"{{user_profile_hue}}", str(data["user"]["profile_hue"]))
+    css = css.replace(r"{{user_profile_hue}}", str(data["user"]["profile_hue"]))
 
-    book = plutoprint.Book(size=plutoprint.PageSize(1000,200), margins=plutoprint.PAGE_MARGINS_NONE,media=plutoprint.MEDIA_TYPE_PRINT)
-    book.load_html(html)
+    book = plutoprint.Book(
+        size=plutoprint.PageSize(1000,200), 
+        margins=plutoprint.PAGE_MARGINS_NONE,
+        media=plutoprint.MEDIA_TYPE_PRINT
+    )
+    book.custom_resource_fetcher = DataFeather()
 
-    # [TODO] 像zncookie这种图特别长的情况需要将图分为多个部分进行渲染，大小暂定10000
-    if book.get_page_count() <= 1:
+    with open("template_debug.html", "w", encoding="utf-8") as f:
+        html_debug = html + "<style>" + css + "</style>"
+        f.write(html_debug)
+
+    book.load_html(html, user_style=css)
+
+    total_pages = book.get_page_count()
+    image = Image.new("RGB", (1140, 267 * total_pages))
+
+    with open("template_debug.html", "w", encoding="utf-8") as f:
+        f.write(html)
+
+    for i in range(total_pages):
         data = io.BytesIO()
-        book.write_to_png_stream(data)
-        data.seek(0)
-        return  [data.getvalue()]
-    else:
-        data_list = []
-        total_pages = book.get_page_count()
-        # 3. 逐页渲染
-        for i in range(total_pages):
-            data = io.BytesIO()
-            # 获取当前页的尺寸，创建对应的画布
-            page_size = book.get_page_size_at(i)
-            width = page_size.width
-            height = page_size.height
 
-            # 创建画布并渲染当前页
-            with plutoprint.ImageCanvas(1140, 267) as canvas:
-                canvas.clear_surface(1, 1, 1) # 做一个hue转rgba
-                canvas.transform(1, 0, 0, 1, -120, 0)
-                book.render_page(canvas, i)  # 关键点：渲染特定页面
-                canvas.write_to_png_stream(data)
-                data.seek(0)
-                data_list.append(data.getvalue())
-        return data_list
+        with plutoprint.ImageCanvas(1140, 267) as canvas:
+            canvas.clear_surface(1, 1, 1) # 做一个hue转rgba
+            canvas.transform(1, 0, 0, 1, -120, 0)
+            book.render_page(canvas, i)
+            canvas.write_to_png_stream(data)
+            data.seek(0)
+            image.paste(Image.open(data), (0, 267 * i))
+
+    if 267 * total_pages > WEBP_MAX:
+        image.save(f"{user_id}.jpeg")
+    else:
+        image.save(f"{user_id}.webp")
+
 
 if __name__ == "__main__":
-    data_list:list[bytes] = get_profile_image(18230719)
-    conut = len(data_list)
-    # 修正ZnCookie超长的个人页面无法渲染的BUG
-    # 需要改成yeild节省内存
-    from PIL import Image
-    output_image = Image.new("RGB", (1140, 267 * conut))
-    for i in range(conut):
-        output_image.paste(Image.open(io.BytesIO(data_list[i])), (0, 267 * i))
-    
-    output_image.save("output.png")
-
- 
+    start_time = time.time()
+    get_profile_image(18230719)
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")

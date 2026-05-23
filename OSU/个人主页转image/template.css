@@ -10,7 +10,7 @@ html {
     font-family: Font Awesome\ 5 Free;
     font-style: normal;
     font-weight: 900;
-    src: url(fonts/fa-solid-900.woff2) format("woff2"), url(fonts/fa-solid-900.woff) format("woff")
+    src: url(font://fa-solid-900.woff2) format("woff2"), url(font://fa-solid-900.woff) format("woff")
 }
 
 @font-face {
@@ -18,14 +18,14 @@ html {
     font-family: WenYuanSansSC;
     font-style: normal;
     font-weight: 400;
-    src:url(fonts/WenYuanSansSC-Regular.otf) format("opentype")
+    src:url(font://WenYuanSansSC-Regular.otf) format("opentype")
 }
 @font-face {
     font-display: swap;
     font-family: WenYuanSansSC;
     font-style: normal;
     font-weight: 700;
-    src:url(fonts/WenYuanSansSC-Bold.otf) format("opentype")
+    src:url(font://WenYuanSansSC-Bold.otf) format("opentype")
 }
 
 .fa,
@@ -35,6 +35,7 @@ html {
 
 body {
     --base-hue-default: 255;
+    --base-hue-override: {{user_profile_hue}};
     --base-hue: var(--base-hue-override, var(--base-hue-default));
     --font-content: WenYuanSansSC, sans-serif;
     --hsl-p: var(--base-hue),100%,50%;
