@@ -44,9 +44,6 @@ class DataFeather(plutoprint.ResourceFetcher):
         match response.headers["content-type"]:
             case "image/vnd.microsoft.icon":
                 icon_data = Image.open(io.BytesIO(response.content))
-                if "sizes" in icon_data.info:
-                    size_list = sorted(icon_data.info["sizes"],key=lambda x:x[1])
-                    icon_data = icon_data.resize(size_list[0])
                 data = io.BytesIO()
                 icon_data.save(data, "png")
                 data.seek(0)
@@ -115,6 +112,6 @@ def get_profile_image(user_id:int) -> None:
 
 if __name__ == "__main__":
     start_time = time.time()
-    get_profile_image(18230719)
+    get_profile_image(15846580)
     end_time = time.time()
     print(f"Execution time: {end_time - start_time} seconds")
