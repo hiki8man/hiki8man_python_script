@@ -10,6 +10,9 @@ import time
 
 GET_USER_JSON: re.Pattern = re.compile(r'data-initial-data="(.*)"\s+data-react="profile-page"')
 WEBP_MAX: int = 8000 # 最大是16383，但QQ有大小限制10mb，保险起见削弱一下
+MAX_HEIGHT: int = 30000 # QQ有最大像素限制，暂时限定死3w
+QQ_PNG_SIZE_MAX: int = 1024 * 1024 # 10mb
+
 
 class DataFeather(plutoprint.ResourceFetcher):
     def fetch_url(self, url: str):
@@ -25,8 +28,31 @@ class DataFeather(plutoprint.ResourceFetcher):
             elif font_path.suffix == ".woff2":
                 return plutoprint.ResourceData(data, "font/woff2")
         
+        if url.startswith("https://i.ppy.sh/"):
+            real_url_hex = url.rsplit("/",maxsplit=1)[1]
+            real_url = bytes.fromhex(real_url_hex).decode("utf-8")
+
+            with httpx.Client(base_url=real_url,verify=False) as client:
+                response = client.get(url)
+                if response.status_code == 200:
+                    res_dict = self.convert_image(response)
+                    return plutoprint.ResourceData(**res_dict)
+
         return super().fetch_url(url)
     
+    def convert_image(self, response:httpx.Response) -> dict:
+        match response.headers["content-type"]:
+            case "image/vnd.microsoft.icon":
+                icon_data = Image.open(io.BytesIO(response.content))
+                if "sizes" in icon_data.info:
+                    size_list = sorted(icon_data.info["sizes"],key=lambda x:x[1])
+                    icon_data = icon_data.resize(size_list[0])
+                data = io.BytesIO()
+                icon_data.save(data, "png")
+                data.seek(0)
+                return {"content":data.getvalue(), "mime_type":"image/png"}
+            case _:
+                return {"content":response.content, "mime_type":response.headers["content-type"]}
 
     
 def get_user_json(osu_id:int) -> dict:
@@ -34,12 +60,10 @@ def get_user_json(osu_id:int) -> dict:
         response = client.get(f"users/{osu_id}")
         if response.status_code == 200:
             reasult = GET_USER_JSON.search(response.text)
-            if reasult is None:
-                return {}
-            else:
+            if reasult:
                 return json.loads(html.unescape(str(reasult.group(1))))
-        else:
-            return {}
+
+        return {}
 
 
 def get_profile_image(user_id:int) -> None:
@@ -55,7 +79,7 @@ def get_profile_image(user_id:int) -> None:
     css = css.replace(r"{{user_profile_hue}}", str(data["user"]["profile_hue"]))
 
     book = plutoprint.Book(
-        size=plutoprint.PageSize(1000,200), 
+        size=plutoprint.PageSize(1000,-1), 
         margins=plutoprint.PAGE_MARGINS_NONE,
         media=plutoprint.MEDIA_TYPE_PRINT
     )
@@ -64,31 +88,30 @@ def get_profile_image(user_id:int) -> None:
     with open("template_debug.html", "w", encoding="utf-8") as f:
         html_debug = html + "<style>" + css + "</style>"
         f.write(html_debug)
-
+    data = io.BytesIO()
     book.load_html(html, user_style=css)
 
-    total_pages = book.get_page_count()
-    image = Image.new("RGB", (1140, 267 * total_pages))
-
-    with open("template_debug.html", "w", encoding="utf-8") as f:
-        f.write(html)
-
-    for i in range(total_pages):
-        data = io.BytesIO()
-
-        with plutoprint.ImageCanvas(1140, 267) as canvas:
-            canvas.clear_surface(1, 1, 1) # 做一个hue转rgba
-            canvas.transform(1, 0, 0, 1, -120, 0)
-            book.render_page(canvas, i)
-            canvas.write_to_png_stream(data)
-            data.seek(0)
-            image.paste(Image.open(data), (0, 267 * i))
-
-    if 267 * total_pages > WEBP_MAX:
-        image.save(f"{user_id}.jpeg")
+    doc_height = book.get_document_height()
+    if doc_height > MAX_HEIGHT:
+        image_height = MAX_HEIGHT
     else:
-        image.save(f"{user_id}.webp")
+        image_height = doc_height
+    
+    book.write_to_png_stream(data,height=int(image_height))
+    if data.tell() <= QQ_PNG_SIZE_MAX:
+        f = open(f"{user_id}.png", "wb")
+        f.write(data.read())
+        f.close()
+        return
 
+    data.seek(0)
+    image = Image.open(data)
+
+    if image_height <= WEBP_MAX:
+        image.save(f"{user_id}.webp")
+        
+    else:
+        image.save(f"{user_id}.jpeg")
 
 if __name__ == "__main__":
     start_time = time.time()
