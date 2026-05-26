@@ -341,3 +341,8 @@ iframe {
     display: inline-block;
     max-width: 425px
 }
+.profile-name{
+    text-align: center;
+    color:hsl(var(--hsl-l1));
+    font-weight: 700;
+}
