@@ -2,15 +2,16 @@ import plutoprint
 import io
 import httpx
 import json
-import re
 import html
+import re
 from pathlib import Path
 from PIL import Image
 import time
+from normalized_svg import normalized_svg
+
 
 GET_USER_JSON: re.Pattern = re.compile(r'data-initial-data="(.*)"\s+data-react="profile-page"')
 IMAGEMAP_LINK: str = r'<a\s+class="imagemap__link"[^>]*?></a>'
-FIX_TSPAN: re.Pattern = re.compile(r"<tspan([^>]*)>(<tspan[^>]*>.*?</tspan>.*?[</tspan>]*)</tspan>", re.DOTALL)
 
 WEBP_MAX: int = 16000 # 最大是16383，但QQ有大小限制10mb，保险起见削弱一下
 MAX_HEIGHT: int = 30000 # QQ有最大像素限制，暂时限定死3w
@@ -35,10 +36,11 @@ class DataFeather(plutoprint.ResourceFetcher):
             real_url = bytes.fromhex(real_url_hex).decode("utf-8")
 
             with httpx.Client(base_url=real_url,verify=False) as client:
-                response = client.get(url)
-                if response.status_code == 200:
-                    res_dict = self.convert_image(response)
-                    return plutoprint.ResourceData(**res_dict)
+                with client.stream("GET", url) as response:
+                    if response.status_code == 200:
+                        response.read()
+                        res_dict = self.convert_image(response)
+                        return plutoprint.ResourceData(**res_dict)
 
         return super().fetch_url(url)
 
@@ -52,28 +54,7 @@ class DataFeather(plutoprint.ResourceFetcher):
                 return {"content":data.getvalue(), "mime_type":"image/png"}
 
             case "image/svg+xml":
-                # plutobook不支持内嵌tspan，需要删除无用部分
-                def fix_tspan(match):
-                    outer = match.group(1) 
-                    inner = match.group(2)
-                    if inner.count("<tspan") >= 2 and re.search(r">[^<]+<", inner):
-                        inner = re.sub(r"</?tspan[^>]*>", "", inner)
-                        return f"<tspan{outer}>{inner}</tspan>"
-                    return match.group(0)
-                
                 content:str = response.content.decode()
-
-                content_pos:int = 0
-                while content_pos < len(content):
-                    result = FIX_TSPAN.search(content, pos=content_pos)
-                    if result:
-                        content = FIX_TSPAN.sub(fix_tspan, content)
-                        content_pos = result.start() + 1 # 修改后字符结束位置发生变化，因此使用start定位
-                    else:
-                        break
-
-                with open("temp.svg", "w", encoding="utf-8") as f:
-                    f.write(content)
 
                 return {"content":content.encode(), "mime_type":"image/svg+xml"}
             case _:
@@ -104,9 +85,7 @@ def get_profile_image(user_id:int) -> None:
     css  =  css.replace(r"{{user_profile_hue}}", str(hue))
 
     book = plutoprint.Book(
-        size=plutoprint.PageSize(1000, -1), 
-        margins=plutoprint.PAGE_MARGINS_NONE,
-        media=plutoprint.MEDIA_TYPE_PRINT
+        size=plutoprint.PageSize(1000,1)
     )
     book.custom_resource_fetcher = DataFeather()
 
