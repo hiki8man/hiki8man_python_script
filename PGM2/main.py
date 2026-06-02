@@ -1,22 +1,7 @@
 from arc4 import ARC4
-from enum import IntEnum
 from card import keys
 from card.orleg2 import CharacterType
 
-
-
-
-class CharacterType(IntEnum):
-    孙悟空 = 0
-    猪八戒 = 1
-    沙悟净 = 2
-    二郎神 = 3
-    小龙女 = 4
-    铁扇   = 5
-    紫衣   = 6
-    嫦娥   = 7
-    唐三藏 = 8
-    蜘蛛精 = 9
 
 def get_checksum(data) -> int:
     checksum = 0
