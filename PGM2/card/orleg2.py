@@ -185,6 +185,7 @@ class ShoesType(IntEnum):
     五色琉璃靴 = 142
 
 class AnotherCharaType(IntEnum):
+    # 武将
     牛魔王 = 143
     金角 = 144
     银角 = 145
@@ -204,6 +205,7 @@ class AnotherCharaType(IntEnum):
     小蜜蜂 = 159
 
 class ItemType(IntEnum):
+    # 道具
     冰箭术 = 160
     钻石尘 = 161
     阎王吐息 = 162
@@ -255,8 +257,9 @@ class ItemType(IntEnum):
     天将令 = 208
 
 class SutraType(IntEnum):
-    经书1 = 209
-    经书2 = 210
-    经书3 = 211
-    经书4 = 212
-    经书5 = 213
+    # 经书
+    涅槃经 = 209
+    五龙经 = 210
+    维摩经 = 211
+    金刚经 = 212
+    法华经 = 213
