@@ -27,7 +27,6 @@
 | `0x0D` | 英文(三国战纪2盖世英雄) |
 
 ## RC4密钥
-西游释厄传2繁中简中统一一个密钥
 ORLEG2: IGS_PGM2_WEST2_V01
 
 KOV2NL: IGS_PGM2_SA2PCARD_AREA1_V01  
