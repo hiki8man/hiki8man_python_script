@@ -150,13 +150,20 @@ def polar_angle_sort_cross(multi_note: list[Vector]) -> list[Vector]:
         vet1:Vector = point_a - centorid
         vet2:Vector = point_b - point_a
         cross = vet1.cross(vet2)
-
         if cross < 0:
             return -1
         elif cross > 0:
             return 1
         else:
             return 0
+
+        dot = vet1.dot(vet2)
+        if dot < 0:
+            return 2
+        elif dot > 0:
+            return -2
+
+        return 0
 
     top_note = [note for note in multi_note if note.y > centorid.y]
     bottom_note = [note for note in multi_note if not note in top_note]
