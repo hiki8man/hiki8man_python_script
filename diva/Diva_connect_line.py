@@ -165,7 +165,7 @@ def polar_angle_sort_cross(multi_note: list[Vector]) -> list[Vector]:
 
         return 0
 
-    top_note = [note for note in multi_note if note.y > centorid.y]
+    top_note = [note for note in multi_note if note.y > centorid.y or (note.y == centorid.y and note.x >= centorid.x)]
     bottom_note = [note for note in multi_note if not note in top_note]
 
     top_note.sort(key=cmp_to_key(cmp_cross))
