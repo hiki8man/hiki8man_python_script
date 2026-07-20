@@ -38,6 +38,7 @@ class TokenConfig:
 
 class OsuModId(IntFlag):
     NF = 1 << 0
+    EZ = 1 << 1
     HD = 1 << 3
     HR = 1 << 4
     DT = 1 << 6
@@ -52,7 +53,7 @@ class BeatmapAttribute:
     hp:float
     hit_length:int
     
-    def calc_with_mod(self, mods_int:int) -> 'BeatmapAttribute':
+    def calc_with_mod(self, mods_int:int, speed:float = 1.0) -> 'BeatmapAttribute':
         if mods_int == 0:
             return self
         
@@ -60,23 +61,29 @@ class BeatmapAttribute:
         
         new_data = BeatmapAttribute(**asdict(self))
         
+        if OsuModId.EZ in mods:
+            new_data.cs *= 0.5
+            new_data.ar *= 0.5
+            new_data.od *= 0.5
+            new_data.hp *= 0.5
+        
         if OsuModId.HR in mods:
-            new_data = BeatmapAttribute(**asdict(self))
-            
             new_data.cs = min(10.0, self.cs * 1.3)
             new_data.ar = min(10.0, self.ar * 1.4)
             new_data.od = min(10.0, self.od * 1.4)
             new_data.hp = min(10.0, self.hp * 1.4)
-            
+
         if OsuModId.DT in mods:
-            new_data.bpm = self.new_speed_bpm(self.bpm, 1.5)
-            new_data.ar  = self.new_speed_ar(self.ar, 1.5)
-            new_data.od  = self.new_speed_od(self.od, 1.5)
+            speed = 1.5 if speed <= 1.0 else speed
+            new_data.bpm = self.new_speed_bpm(self.bpm, speed)
+            new_data.ar  = self.new_speed_ar(self.ar, speed)
+            new_data.od  = self.new_speed_od(self.od, speed)
     
         if OsuModId.HT in mods:
-            new_data.bpm = self.new_speed_bpm(self.bpm, 0.75)
-            new_data.ar  = self.new_speed_ar(self.ar, 0.75)
-            new_data.od  = self.new_speed_od(self.od, 0.75)
+            speed = 0.75 if speed >= 1.0 else speed
+            new_data.bpm = self.new_speed_bpm(self.bpm, speed)
+            new_data.ar  = self.new_speed_ar(self.ar, speed)
+            new_data.od  = self.new_speed_od(self.od, speed)
 
         return new_data
 
@@ -264,7 +271,7 @@ class OsuApiV2:
 
 
 
-def get_beatmap_info(v2_api:OsuApiV2, bid:int, use_mods:OsuModId= OsuModId.NF) -> dict[str,str]|None:
+def get_beatmap_info(v2_api:OsuApiV2, bid:int, use_mods:OsuModId= OsuModId.NF, speed:float = 1.0) -> dict[str,str]|None:
     beatmap_info:dict = v2_api.get(f"beatmaps/{bid}")
     attributes:dict = v2_api.post(f"beatmaps/{bid}/attributes", json_data={"mods": int(use_mods)})
     
@@ -288,7 +295,7 @@ def get_beatmap_info(v2_api:OsuApiV2, bid:int, use_mods:OsuModId= OsuModId.NF) -
             od  = beatmap_info["accuracy"],
             hp  = beatmap_info["drain"],
             hit_length = beatmap_info["hit_length"]
-        ).calc_with_mod(use_mods)
+        ).calc_with_mod(use_mods, speed)
     )
     
     return beatmap_data.dict_data
