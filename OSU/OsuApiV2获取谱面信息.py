@@ -69,18 +69,20 @@ class BeatmapAttribute:
             new_data.hp = min(10.0, self.hp * 1.4)
             
         if OsuModId.DT in mods:
-            new_data.ar = self.new_speed_ar(self.ar, 1.5)
-            new_data.od = self.new_speed_od(self.od, 1.5)
+            new_data.bpm = self.new_speed_bpm(self.bpm, 1.5)
+            new_data.ar  = self.new_speed_ar(self.ar, 1.5)
+            new_data.od  = self.new_speed_od(self.od, 1.5)
     
         if OsuModId.HT in mods:
-            new_data.ar = self.new_speed_ar(self.ar, 0.75)
-            new_data.od = self.new_speed_od(self.od, 0.75)
+            new_data.bpm = self.new_speed_bpm(self.bpm, 0.75)
+            new_data.ar  = self.new_speed_ar(self.ar, 0.75)
+            new_data.od  = self.new_speed_od(self.od, 0.75)
 
         return new_data
 
     def calc_with_speed(self, speed:float) -> 'BeatmapAttribute':
         return BeatmapAttribute(
-            bpm=self.bpm * speed,
+            bpm=self.new_speed_bpm(self.bpm, speed),
             cs=self.cs,
             ar=self.new_speed_ar(self.ar, speed),
             od=self.new_speed_od(self.od, speed),
@@ -112,6 +114,10 @@ class BeatmapAttribute:
         new_od = (80 - new_hit_window) / 6
         
         return new_od
+    
+    @staticmethod
+    def new_speed_bpm(original_bpm:float, speed:float) -> float:
+        return original_bpm * speed
 
 @dataclass
 class BeatmapInfo:
@@ -260,7 +266,7 @@ class OsuApiV2:
 
 def get_beatmap_info(v2_api:OsuApiV2, bid:int, use_mods:OsuModId= OsuModId.NF) -> dict[str,str]|None:
     beatmap_info:dict = v2_api.get(f"beatmaps/{bid}")
-    attributes:dict = v2_api.get("beatmaps/5265618/attributes", params={"mods": use_mods})
+    attributes:dict = v2_api.post(f"beatmaps/{bid}/attributes", json_data={"mods": int(use_mods)})
     
     beatmap_data: BeatmapInfo = BeatmapInfo(
         id  = beatmap_info["id"],
@@ -294,5 +300,8 @@ if __name__ == "__main__":
         client_secret="Get your own client_id and client_secret from https://osu.ppy.sh/home/account/edit"
     )
     osu_api = OsuApiV2(client_config)
-    
-    print(get_beatmap_info(osu_api, 5265618, OsuModId.HD | OsuModId.DT))
+    from pprint import pprint
+    print("NM")
+    pprint(get_beatmap_info(osu_api, 5265618))
+    print("HR+DT")
+    pprint(get_beatmap_info(osu_api, 5265618, OsuModId.HR | OsuModId.DT))
