@@ -1,6 +1,6 @@
 import httpx
 import re,json
-RE_BEATMAPSET = r'<script id="json-beatmapset" type="application/json">\n        (.*?)\n    </script>'
+RE_BEATMAPSET = r'<script id="json-beatmapset" type="application/json">\s*(.*?)\s*</script>'
 
 def get_response(url:str) -> tuple[str, str]:
     response = httpx.get(url,follow_redirects=True,verify=False)
